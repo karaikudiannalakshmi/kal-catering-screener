@@ -1,0 +1,16 @@
+{
+  "name": "kal-catering-screener-functions",
+  "description": "Exotel call webhook -> auto-send the customer intake link by SMS",
+  "type": "module",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  }
+}

@@ -20,9 +20,11 @@ import Papa from "papaparse";
 import { initializeApp } from "firebase/app";
 import { getFirestore, writeBatch, doc } from "firebase/firestore";
 import { firebaseConfig } from "../src/lib/firebase-config.js";
+import { signInAsStaff } from "./lib/staffAuth.mjs";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+await signInAsStaff(app);
 
 function parseCsv(filename) {
   const text = readFileSync(new URL(`../data/${filename}`, import.meta.url), "utf-8");

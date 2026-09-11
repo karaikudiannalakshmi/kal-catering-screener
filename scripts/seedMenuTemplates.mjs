@@ -18,9 +18,11 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { firebaseConfig } from "../src/lib/firebase-config.js";
+import { signInAsStaff } from "./lib/staffAuth.mjs";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+await signInAsStaff(app);
 
 const templates = [
   {

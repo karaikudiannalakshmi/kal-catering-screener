@@ -1,5 +1,5 @@
 // Replace with your KAL Firebase project config (same pattern as your other apps)
-  export const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyCJZPyi_oHa9z3Mj9Zd-3tUQvtsQ58pP7Y",
   authDomain: "kal-catering-screener.firebaseapp.com",
   projectId: "kal-catering-screener",

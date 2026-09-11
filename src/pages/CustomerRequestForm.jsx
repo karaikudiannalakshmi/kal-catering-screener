@@ -50,6 +50,7 @@ export default function CustomerRequestForm() {
   const [details, setDetails] = useState(emptyDetails);
   const [templates, setTemplates] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [templatesError, setTemplatesError] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const selectedTemplate = templates.find((t) => t.id === details.menuTemplateId);
@@ -65,8 +66,13 @@ export default function CustomerRequestForm() {
       (snap) => {
         setTemplates(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
         setTemplatesLoading(false);
+        setTemplatesError(null);
       },
-      () => setTemplatesLoading(false)
+      (err) => {
+        console.error("Failed to load menu templates:", err);
+        setTemplatesLoading(false);
+        setTemplatesError(err.message || String(err));
+      }
     );
     return () => unsub();
   }, []);
@@ -452,6 +458,13 @@ export default function CustomerRequestForm() {
                     />
                   </div>
                 </div>
+
+                {templatesError && (
+                  <div className="notice-error">
+                    Could not load menus ({templatesError}). Please try refreshing the page — if this
+                    keeps happening, let us know when we call you.
+                  </div>
+                )}
 
                 <MenuPicker
                   templates={templates}

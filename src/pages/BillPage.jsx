@@ -79,7 +79,7 @@ export default function BillPage() {
         .bill-terms-list li { margin-bottom: 14px; font-size: 14px; line-height: 1.5; }
         .bill-terms-footer-note { margin-top: 20px; font-style: italic; }
         @media print {
-          .bill-noprint { display: none; }
+          .bill-noprint { display: none !important; }
           .bill-wrapper { padding: 0; }
         }
       `}</style>

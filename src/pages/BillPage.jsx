@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase.js";
-import { computeCustomerBill } from "../lib/billing.js";
+import { computeCustomerBill, findRecipeForItem } from "../lib/billing.js";
+import { cleanRecipeName } from "../lib/displayName.js";
+import { useRecipes } from "../lib/useRecipes.js";
 import TermsAndConditions from "../components/TermsAndConditions.jsx";
 
 export default function BillPage() {
@@ -11,6 +13,7 @@ export default function BillPage() {
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { recipes } = useRecipes();
 
   useEffect(() => {
     (async () => {
@@ -46,6 +49,8 @@ export default function BillPage() {
     transportCharge: order.bill?.transportCharge || 0,
   });
 
+  const items = order.customizedItems || template?.items || [];
+
   return (
     <div className="bill-wrapper">
       <style>{`
@@ -63,6 +68,10 @@ export default function BillPage() {
         .bill-table td { padding: 10px 4px; border-bottom: 1px solid var(--line); font-size: 14px; }
         .bill-table td.num, .bill-table th.num { text-align: right; }
         .bill-total-row td { font-weight: 700; border-top: 2px solid var(--ink); border-bottom: none; }
+        .bill-items-row td { padding-top: 0; }
+        .bill-items-list { list-style: none; margin: 0; padding: 0; font-size: 12px; color: var(--ink-soft); }
+        .bill-items-list li { padding: 2px 0; }
+        .bill-items-list .tamil { font-family: var(--font-tamil); }
         .bill-gst-note { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
         .bill-terms { page-break-before: always; }
         .bill-terms-inner { max-width: 640px; }
@@ -125,6 +134,23 @@ export default function BillPage() {
               <td className="num">₹{bill.finalPricePerPack.toLocaleString("en-IN")}</td>
               <td className="num">₹{bill.foodTotal.toLocaleString("en-IN")}</td>
             </tr>
+            {items.length > 0 && (
+              <tr className="bill-items-row">
+                <td colSpan={4}>
+                  <ul className="bill-items-list">
+                    {items.map((item, i) => {
+                      const recipe = findRecipeForItem(item, recipes);
+                      return (
+                        <li key={i}>
+                          {cleanRecipeName(item.name)}
+                          {recipe?.nameTamil && <span className="tamil"> · {recipe.nameTamil}</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </td>
+              </tr>
+            )}
             {order.bill?.transportCharge > 0 && (
               <tr>
                 <td>

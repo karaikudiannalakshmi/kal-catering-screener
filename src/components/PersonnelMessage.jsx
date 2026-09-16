@@ -2,27 +2,33 @@ import { useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase.js";
 import { buildWhatsAppLink } from "../lib/whatsapp.js";
+import { cleanRecipeName } from "../lib/displayName.js";
 
-function buildMessage(order, personnelCount) {
-  return [
+function buildMessage(order, personnelCount, items) {
+  const lines = [
     "Service personnel required — Karaikudi Annalakshmi catering",
     "",
-    `Customer: ${order.customerName}`,
     `Date: ${order.orderDate}`,
-    `Session: ${order.session}`,
-    order.serviceTime ? `Serve time: ${order.serviceTime}` : null,
-    `Number of packs: ${order.packCount}`,
+    order.serviceTime ? `Time: ${order.serviceTime}` : null,
     `Venue: ${order.deliveryAddress}`,
-    `Personnel needed: ${personnelCount}`,
-    "",
-    "Please confirm availability.",
-  ]
-    .filter(Boolean)
-    .join("\n");
+    `Pax: ${order.packCount}`,
+    `Personnel needed for table service: ${personnelCount}`,
+  ];
+
+  if (items?.length) {
+    lines.push("", "Menu items:");
+    for (const item of items) {
+      lines.push(`- ${cleanRecipeName(item.name)}`);
+    }
+  }
+
+  lines.push("", "Please confirm availability.");
+
+  return lines.filter((l) => l !== null).join("\n");
 }
 
 
-export default function PersonnelMessage({ order, contractors }) {
+export default function PersonnelMessage({ order, contractors, items }) {
   const [personnelCount, setPersonnelCount] = useState(order.personnelCount ?? "");
   const [contractorId, setContractorId] = useState(order.contractorId || "");
   const [copied, setCopied] = useState(false);
@@ -48,7 +54,7 @@ export default function PersonnelMessage({ order, contractors }) {
     }
   }
 
-  const message = buildMessage(order, personnelCount || "?");
+  const message = buildMessage(order, personnelCount || "?", items);
 
   async function copyMessage() {
     try {

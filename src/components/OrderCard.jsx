@@ -112,7 +112,7 @@ export default function OrderCard({ order, allOrders, templates, contractors, on
 
       {order.needsServicePersonnel && (
         <div style={{ marginTop: 14 }}>
-          <PersonnelMessage order={order} contractors={contractors} />
+          <PersonnelMessage order={order} contractors={contractors} items={itemsToShow} />
         </div>
       )}
 

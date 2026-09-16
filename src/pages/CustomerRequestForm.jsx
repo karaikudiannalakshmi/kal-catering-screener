@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { db, auth } from "../lib/firebase.js";
-import { toE164 } from "../lib/phone.js";
+import { toE164, isValidIndianMobile } from "../lib/phone.js";
 import { phoneToSyntheticEmail } from "../lib/customerAuth.js";
 import MenuPicker from "../components/MenuPicker.jsx";
 
@@ -103,9 +103,28 @@ export default function CustomerRequestForm() {
     return recaptchaRef.current;
   }
 
+  // Actually tears down the rendered widget, not just the reference to it —
+  // without calling .clear(), the container still has the old widget's DOM
+  // in it, and the next RecaptchaVerifier() throws "already been rendered
+  // in this element" instead of rendering a fresh one.
+  function resetRecaptcha() {
+    if (recaptchaRef.current) {
+      try {
+        recaptchaRef.current.clear();
+      } catch (err) {
+        console.error(err);
+      }
+      recaptchaRef.current = null;
+    }
+  }
+
   async function sendOtp(e) {
     e.preventDefault();
+    if (sending) return; // guards against a double-click firing this twice before re-render
     if (!phoneInput.trim()) return setError("Please enter your phone number.");
+    if (!isValidIndianMobile(phoneInput)) {
+      return setError("Please enter a valid 10-digit mobile number.");
+    }
     setError(null);
     setSending(true);
     try {
@@ -116,8 +135,9 @@ export default function CustomerRequestForm() {
     } catch (err) {
       console.error(err);
       setError("Could not send the code — check the number and try again.");
-      // Recaptcha tokens are single-use; drop it so the next attempt gets a fresh one.
-      recaptchaRef.current = null;
+      // Recaptcha tokens are single-use; tear down the widget so the next
+      // attempt renders a genuinely fresh one instead of colliding with it.
+      resetRecaptcha();
     } finally {
       setSending(false);
     }
@@ -146,6 +166,9 @@ export default function CustomerRequestForm() {
   async function signInWithPassword(e) {
     e.preventDefault();
     if (!phoneInput.trim() || !passwordInput) return setError("Enter your phone number and password.");
+    if (!isValidIndianMobile(phoneInput)) {
+      return setError("Please enter a valid 10-digit mobile number.");
+    }
     setError(null);
     setSigningIn(true);
     try {
@@ -186,6 +209,7 @@ export default function CustomerRequestForm() {
     setPasswordInput("");
     setError(null);
     confirmationRef.current = null;
+    resetRecaptcha();
   }
 
   function updateDetail(field, value) {

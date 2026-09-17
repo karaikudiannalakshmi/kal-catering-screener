@@ -15,6 +15,7 @@ import { db } from "../lib/firebase.js";
 import { SESSIONS, ADDITIONAL_SERVICES, ORDER_STATUS } from "../lib/constants.js";
 import { buildAcknowledgementMessage } from "../lib/acknowledgement.js";
 import { buildWhatsAppLink } from "../lib/whatsapp.js";
+import ItemListEditor from "../components/ItemListEditor.jsx";
 
 const emptyForm = {
   customerName: "",
@@ -44,6 +45,8 @@ export default function ScreenerForm() {
   const [savedOrder, setSavedOrder] = useState(null); // the order just saved, for the acknowledgement panel
   const [ackCopied, setAckCopied] = useState(false);
   const [prefilledFrom, setPrefilledFrom] = useState(null); // submission doc, if this form was opened from one
+  const [editingItems, setEditingItems] = useState(false);
+  const [customItems, setCustomItems] = useState(null); // set once staff edits the item list; overrides the template's items
 
   useEffect(() => {
     const q = query(collection(db, "menuTemplates"), orderBy("session"), orderBy("name"));
@@ -115,6 +118,9 @@ export default function ScreenerForm() {
   function handleTemplateSelect(id) {
     const tpl = templates.find((t) => t.id === id);
     setForm((f) => ({ ...f, menuTemplateId: id, menuTemplateName: tpl ? tpl.name : "" }));
+    // A different template means different items — drop any edits made for the previous one.
+    setCustomItems(null);
+    setEditingItems(false);
   }
 
   function toggleService(service) {
@@ -171,10 +177,16 @@ export default function ScreenerForm() {
         status: ORDER_STATUS.SCREENED,
         createdAt: serverTimestamp(),
       };
+      if (customItems) {
+        orderData.customizedItems = customItems;
+        orderData.isCustomized = true;
+      }
       await addDoc(collection(db, "orders"), orderData);
-      setSavedOrder({ ...orderData, templateItems: selectedTemplate?.items || [] });
+      setSavedOrder({ ...orderData, templateItems: customItems || selectedTemplate?.items || [] });
       setAckCopied(false);
       setForm(emptyForm);
+      setCustomItems(null);
+      setEditingItems(false);
       if (prefilledFrom) {
         try {
           await updateDoc(doc(db, "customerSubmissions", prefilledFrom.id), { status: "used" });
@@ -327,21 +339,60 @@ export default function ScreenerForm() {
 
         {selectedTemplate && (
           <div className="field">
-            <label>Items in "{selectedTemplate.name}" (per pack)</label>
-            <div className="card" style={{ padding: "12px 16px" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <tbody>
-                  {selectedTemplate.items.map((item, i) => (
-                    <tr key={i} style={{ borderTop: i > 0 ? "1px solid var(--line)" : "none" }}>
-                      <td style={{ padding: "4px 0", color: "var(--ink-soft)" }}>{item.name}</td>
-                      <td style={{ padding: "4px 0", textAlign: "right" }}>
-                        {item.quantity} {item.unit}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label style={{ marginBottom: 0 }}>
+                Items in "{selectedTemplate.name}" (per pack)
+                {customItems && <span className="customized-badge">Edited</span>}
+              </label>
+              {!editingItems && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    setCustomItems((customItems || selectedTemplate.items).map((it) => ({ ...it })));
+                    setEditingItems(true);
+                  }}
+                >
+                  {customItems ? "Continue editing" : "Edit items for this order"}
+                </button>
+              )}
             </div>
+
+            {editingItems ? (
+              <div className="card" style={{ padding: "12px 16px" }}>
+                <ItemListEditor items={customItems} onChange={setCustomItems} />
+                <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                  <button type="button" className="btn-primary" onClick={() => setEditingItems(false)}>
+                    Done editing
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      setCustomItems(null);
+                      setEditingItems(false);
+                    }}
+                  >
+                    Revert to template
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="card" style={{ padding: "12px 16px" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <tbody>
+                    {(customItems || selectedTemplate.items).map((item, i) => (
+                      <tr key={i} style={{ borderTop: i > 0 ? "1px solid var(--line)" : "none" }}>
+                        <td style={{ padding: "4px 0", color: "var(--ink-soft)" }}>{item.name}</td>
+                        <td style={{ padding: "4px 0", textAlign: "right" }}>
+                          {item.quantity} {item.unit}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

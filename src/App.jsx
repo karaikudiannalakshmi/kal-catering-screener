@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import ScreenerForm from "./pages/ScreenerForm.jsx";
 import ReviewDashboard from "./pages/ReviewDashboard.jsx";
+import OrderDetail from "./pages/OrderDetail.jsx";
 import ManageTemplates from "./pages/ManageTemplates.jsx";
 import ManageContractors from "./pages/ManageContractors.jsx";
 import Submissions from "./pages/Submissions.jsx";
@@ -9,6 +10,7 @@ import BillPage from "./pages/BillPage.jsx";
 import CustomerRequestForm from "./pages/CustomerRequestForm.jsx";
 import Login from "./pages/Login.jsx";
 import ManageStaff from "./pages/ManageStaff.jsx";
+import Reports from "./pages/Reports.jsx";
 import { useAuth } from "./lib/useAuth.js";
 
 function StaffLayout({ user, signOut }) {
@@ -25,6 +27,9 @@ function StaffLayout({ user, signOut }) {
           </NavLink>
           <NavLink to="/review" className={({ isActive }) => (isActive ? "active" : "")}>
             Review
+          </NavLink>
+          <NavLink to="/reports" className={({ isActive }) => (isActive ? "active" : "")}>
+            Reports
           </NavLink>
           <NavLink to="/submissions" className={({ isActive }) => (isActive ? "active" : "")}>
             Customer submissions
@@ -51,6 +56,8 @@ function StaffLayout({ user, signOut }) {
           <Route path="/" element={<Navigate to="/screener" replace />} />
           <Route path="/screener" element={<ScreenerForm />} />
           <Route path="/review" element={<ReviewDashboard />} />
+          <Route path="/review/:orderId" element={<OrderDetail />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="/submissions" element={<Submissions />} />
           <Route path="/templates" element={<ManageTemplates />} />
           <Route path="/recipes" element={<ManageRecipes />} />

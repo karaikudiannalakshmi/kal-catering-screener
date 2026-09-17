@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase.js";
-import { computeCustomerBill, findRecipeForItem } from "../lib/billing.js";
+import { computeCustomerBill, findRecipeForItem, customerItemQty } from "../lib/billing.js";
 import { cleanRecipeName } from "../lib/displayName.js";
 import { useRecipes } from "../lib/useRecipes.js";
 import TermsAndConditions from "../components/TermsAndConditions.jsx";
@@ -140,10 +140,12 @@ export default function BillPage() {
                   <ul className="bill-items-list">
                     {items.map((item, i) => {
                       const recipe = findRecipeForItem(item, recipes);
+                      const qty = customerItemQty(item, order.session, order.packCount);
                       return (
                         <li key={i}>
                           {cleanRecipeName(item.name)}
                           {recipe?.nameTamil && <span className="tamil"> · {recipe.nameTamil}</span>}
+                          {qty && <span> — {qty}</span>}
                         </li>
                       );
                     })}

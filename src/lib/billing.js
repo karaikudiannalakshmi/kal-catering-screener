@@ -49,3 +49,31 @@ export function computeCustomerBill({ pricePerPack, packCount, adjustment, trans
   const grandTotal = foodTotal + (transportCharge || 0);
   return { baseTotal, foodTotal, finalPricePerPack, grandTotal };
 }
+
+// Trims a number to at most 2 decimals without leaving trailing zeros —
+// 12.50 -> "12.5", 12 -> "12".
+function formatQty(n) {
+  return Math.round(n * 100) / 100;
+}
+
+// Breakfast and Dinner show the total quantity needed across all packs on
+// the customer confirmation/bill (e.g. "Idly — 300 NOS") — that's what
+// actually gets prepared/served, and both the kitchen and customer find it
+// useful to see spelled out. Lunch deliberately shows names only, no
+// quantities. This is a fixed rule from how these two are meant to read,
+// not a per-order choice, so it lives here once rather than being repeated
+// wherever a customer-facing item list is rendered.
+export function formatCustomerItemLine(item, session, packCount) {
+  const name = cleanRecipeName(item.name);
+  if (session === "Lunch") return name;
+  const total = formatQty((item.quantity || 0) * (packCount || 0));
+  return `${name} — ${total} ${item.unit}`;
+}
+
+// Same rule as above, but returns just the quantity part (or null for
+// Lunch) — used where the name needs other things interleaved with it
+// (like a Tamil name) rather than a single plain-text line.
+export function customerItemQty(item, session, packCount) {
+  if (session === "Lunch") return null;
+  return `${formatQty((item.quantity || 0) * (packCount || 0))} ${item.unit}`;
+}

@@ -126,6 +126,21 @@ Import the repo in Vercel — it will auto-detect the Vite build (`npm run build
 `dist/`). No environment variables needed since the Firebase config is in the source file,
 same as your other apps.
 
+## Running the seed / import scripts (seedMenuTemplates, seedRecipes, importTamilNames)
+
+All three (covered individually below) write to Firestore, and the security rules require a
+signed-in, approved staff account for that — same as the app itself. So each one now opens
+by prompting right in the terminal:
+
+```
+Staff email: you@example.com
+Password: ●●●●●●●●
+```
+
+Use the same login you use on the app. There's no hidden-input support in a plain terminal
+prompt, so the password is typed visibly — fine for a private terminal, just not something
+to run somewhere anyone's watching your screen.
+
 ## Menu templates
 
 Templates live in a `menuTemplates` collection (name, session, price per pack, item list with
@@ -381,6 +396,77 @@ as a failure rather than silently vanishing).
 
 The manual **Send link via WhatsApp** button stays as-is for anyone staff wants to text the
 link to directly, independent of this automation.
+
+## Editing the menu at order-taking time
+
+The screener form's item preview now has an **"Edit items for this order"** button once a
+template is picked — search-and-add from the recipe catalog, remove or adjust quantities,
+same editor used everywhere else in the app. If staff use it, the order saves with
+`customizedItems` from the start (same field the Review dashboard's "Customize order" uses
+later), marked with an "Edited" badge — so a change made at intake and a change made during
+review both end up in the same place, and either one is visible wherever the order's items
+are shown.
+
+## Confirming an order with the customer
+
+Each order in Review now has a **Confirmation** button alongside Billing. It composes a
+message with the date, session, serve time, venue, menu, pax, final price (reflecting any
+billing adjustment), transport charge if set, a link to the printable bill, and a line about
+the 50% advance from your Terms and Conditions — then **Send via WhatsApp & mark Confirmed**
+does both at once: opens WhatsApp with that message ready to send, and sets the order's
+status to Confirmed with a timestamp. That's the direct answer to "how does it get confirmed
+and saved" — this button is that step. The status dropdown still works independently too,
+for cases like a verbal confirmation over a phone call where there's nothing to send.
+
+## Orders — list and detail
+
+The Review tab is now a **list → detail** pair instead of one long scrolling page of every
+order stacked on top of each other:
+
+- **`/review`** — one line per order (date, customer, session, menu, packs, status), with
+  status and date filters at the top. Click any row to open it.
+- **`/review/:orderId`** — everything about that one order, in clearly labeled sections:
+  order details (now editable — see below), reference orders for the day, menu items,
+  service personnel messaging, billing, confirmation, and status.
+
+Reports' order list rows are clickable the same way, landing on the same detail page.
+
+**Order details are now editable** — an "Edit order details" button on the detail page opens
+the full set of fields (name, phone, address, date, session, packs, serve time, site
+distance, live counter / service personnel, other services, notes) for correction after the
+order's already been saved. Previously the only things editable after intake were the menu
+items and the status.
+
+**Reference orders for the day** is its own labeled section now, and shows more than just
+same-session conflicts — it lists every order on that date across all sessions (session,
+customer, menu, packs, status), so review always has the full day's picture, not just
+same-session matches. The same-session same-menu/different-menu flagging logic is unchanged,
+just given a proper heading and placed right after order details instead of being buried
+mid-card.
+
+**Status changes now show a "Saved" confirmation** next to the dropdown for a couple of
+seconds after you pick a new one — the save itself always worked, this is just direct
+feedback that it went through.
+
+**"Decoration" removed** from Other services — it's gone from the list for new selections.
+Any past order that already had it saved still shows it; only the option going forward is
+gone. If you want it back, or want to trim/add others, it's one line in
+`src/lib/constants.js`.
+
+## Quantities on the customer confirmation and bill
+
+Breakfast and Dinner now show each item with its **total quantity across all packs** — e.g.
+"Idly — 300 NOS" for 150 packs of a menu with 2 Idlies per pack — on both the WhatsApp
+confirmation message and the printed bill. **Lunch shows item names only, no quantities**,
+on both. This is a fixed rule (`formatCustomerItemLine` / `customerItemQty` in
+`src/lib/billing.js`), not a per-order toggle, so it's applied consistently everywhere an
+item list reaches the customer.
+
+## Reports
+
+A new **Reports** tab: pick a date range, and it shows a table of order counts per status
+per day (Screened / Reviewed / Confirmed / Executed), with a total row, plus a filterable
+list of the underlying orders below it. Defaults to the last 30 days on open.
 
 ## Billing
 

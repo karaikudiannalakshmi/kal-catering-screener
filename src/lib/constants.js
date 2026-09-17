@@ -1,6 +1,6 @@
 export const SESSIONS = ["Breakfast", "Lunch", "Dinner"];
 
-export const ADDITIONAL_SERVICES = ["Crockery/buffet setup", "Decoration", "Transport/delivery van"];
+export const ADDITIONAL_SERVICES = ["Crockery/buffet setup", "Transport/delivery van"];
 
 export const ORDER_STATUS = {
   SCREENED: "screened",
